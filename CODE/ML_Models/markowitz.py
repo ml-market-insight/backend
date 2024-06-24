@@ -1,0 +1,222 @@
+
+from packages_import import *
+from db_connection import *
+import yfinance as yf
+
+# STOCKS THAT WILL SCRAP FROM YF
+stocks = ['AAPL','AMZN', 'MSFT', 'EURUSD', 'EURCHF']
+
+# INITIAL ALLOCATION
+weight = [0.3, 0.5, 0.2]
+
+# BOUNDERIES OF HISTORICAL DATA
+start_date = '2017-01-01'
+end_date = '2022-01-01'
+
+# NUMBER OF TRADING DAY PER YEAR
+NUM_OF_TRADING_DAYS = 252
+
+# NUMBER OF PORTFOLIO TO GENERATE FOR MONTE-CARLO SIMULATIONS
+NUM_PORTFOLIO = 10000
+
+
+# _________________________________________________DOWNLOADING/DISPLAYING INITIAL DATA_________________________________
+
+
+def download_data():
+    # Store stocks related data
+    stocks_data = {}
+
+    # search in the previously defined stocks array
+    for stock in stocks:
+        # get the ticker from yfinance
+        ticker = yf.Ticker(stock)
+
+        # add a key stock in a dictionnary stocks_data
+        # retrieve historical data of all stocks
+        stocks_data[stock] = ticker.history(start=start_date, end=end_date)['Close']
+
+    # Return a pandas dataframe with all the historical data
+    return pd.DataFrame(stocks_data)
+
+
+def show_data(data):
+    # plotting a figure, precizing the size
+    data.plot(figsize=(10, 5))
+
+    # plotting using matplotlib
+    plt.show()
+
+
+# _________________________________________CALCULATING RETURNS/VOLATILITY_OF_ASSETS/PORTFOLIO___________________________
+
+
+def calculate_return(data):
+    # getting logarithmic return log(S(t+1)/S(t))
+    log_return = np.log(data / data.shift(1))
+
+    # First value is NaN
+    return log_return[1:]
+
+
+def show_statistics(returns):
+    # Expected return per asset
+    print(returns)
+    print("Mean value of the returns (expected return per asset) :\n", returns.mean() * NUM_OF_TRADING_DAYS)
+
+    # Covariance matrix of returns
+    print("Covariance matrix of assets\n", returns.cov() * NUM_OF_TRADING_DAYS)
+
+
+def show_mean_variance(returns, weights):
+    # Annual return of the portfolio, based on asset returns, weighted by the allocation.
+    portfolio_return = np.sum(returns.mean() * weights) * NUM_OF_TRADING_DAYS
+
+    # Look at mathematical formula its simple to understand
+    portfolio_volatility = np.sqrt(np.dot(weights, np.dot(returns.cov() * NUM_OF_TRADING_DAYS, weights)))
+
+    print("Expected portfolio return (mean) : ", portfolio_return)
+    print("Expected portfolio volatility (standard deviation) : ", portfolio_volatility)
+
+
+# _________________________________________________MONTE-CARLO_SIMULATIONS_____________________________________________
+
+
+def show_portfolio(returns, volatility):
+    # choosing dimension of the figure
+    plt.figure(figsize=(10, 6))
+
+    # plot volatility/returns, color depends on value
+    plt.scatter(volatility, returns, c=returns / volatility, marker='o')
+    plt.grid(True)
+    plt.xlabel('Expected Volatility')
+    plt.ylabel('Expected return')
+
+    # Adding color bar sharpe ratio
+    plt.colorbar(label='Sharpe ratio')
+    plt.show()
+
+
+def generate_portfolio(returns):
+    # array of means (expected return of given portfolio)
+    portfolio_means = []
+
+    # array of volatility (risks of a given portfolio)
+    portfolio_risks = []
+
+    # array of weight (capital allocation in a given portfolio)
+    portfolio_weight = []
+
+    for v in range(NUM_PORTFOLIO):
+        # creating random weight and normalizing them
+        w = np.random.random(len(stocks))
+        w /= np.sum(w)
+        portfolio_weight.append(w)
+
+        # calculating the expected returns with the new weight
+        portfolio_means.append(np.sum(returns.mean() * w) * NUM_OF_TRADING_DAYS)
+
+        # calculating the volatility related to the weight and returns of the portfolio
+        portfolio_risks.append(np.sqrt(np.dot(w, np.dot(returns.cov() * NUM_OF_TRADING_DAYS, w))))
+
+    # returning 3 numpy arrays
+    return np.array(portfolio_weight), np.array(portfolio_means), np.array(portfolio_risks)
+
+
+# _________________________________________________OPTIMIZING/FINDING_BEST_PORTFOLIO_____________________________________________
+
+
+def statistics(weights, returns):
+    # return the expected return of the portfolio
+    portfolio_return = np.sum(returns.mean() * weights) * NUM_OF_TRADING_DAYS
+
+    # return the expected volatility of the portfolio
+    portfolio_volatility = np.sqrt(np.dot(weights, np.dot(returns.cov() * NUM_OF_TRADING_DAYS, weights)))
+
+    # return an array contening the return, the volatility, the Sharpe Ratio
+    return np.array([portfolio_return, portfolio_volatility, portfolio_return / portfolio_volatility])
+
+
+# the maximum sharpe ratio given by statistics is at a given f(x), so the minimum of -f(x)
+def min_function_sharpe(weights, returns):
+    # return the sharpe ratio
+    return -statistics(weights, returns)[2]
+
+
+# what are the constraints ? Sum of w =1
+# f(x)=0 has to be minimized
+def optimize_portfolio(weights, returns):
+
+    # The constraints is an equation
+    # The function lambda takes x as argument
+    # Check if the sum of x = 1 (sum of weights)
+    constraints = {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}
+
+    # define a tuple (0,1) for each assets in the portfolio
+    bounds = tuple((0, 1) for _ in range(len(stocks)))
+
+    # We use the min_function_sharpe function defined above
+    # portfolio at index [0] is taken
+    # passing the associated returns as argument
+    # using SLSQP optimization method
+    # The bounds for the weights of optimized portfolio is between 0 and 1
+    # The sum of all weights is 1 as a constraint
+    return optimization.minimize(fun=min_function_sharpe, x0=weights[0], args=returns, method='SLSQP', bounds=bounds,
+                                 constraints=constraints)
+
+
+def print_optimal_portfolio(_optimum, returns):
+    # Optimum['x'] refers to the result of the optimization process
+    print("Optimal portfolio: ", _optimum['x'].round(3))
+    print("Expected return and sharpe ratio : ", statistics(_optimum['x'].round(3), returns))
+
+
+def show_optimal_portfolio(opt, rets, portfolio_rets, portfolio_vols):
+    plt.figure(figsize=(10, 6))
+    plt.scatter(portfolio_vols, portfolio_rets, c=portfolio_rets / portfolio_vols, marker='o')
+    plt.grid(True)
+    plt.xlabel('Expected volatility')
+    plt.ylabel('Expected Return')
+    plt.colorbar(label='Sharpe Ratio')
+    plt.plot(statistics(opt['x'], rets)[1], statistics(opt['x'], rets)[0], 'g*', markersize=6.4)
+    plt.show()
+
+
+if __name__ == '__main__':
+    # DOWNLOADING AND DISPLAYING ASSETS
+    dataset2 = get_financial_data()
+    to_evaluate = dataset2[dataset2["ticker"].isin(stocks)].reset_index(drop=True)
+    test = pd.DataFrame(to_evaluate.loc[0, "time_series_data"])
+    dataset = pd.DataFrame()
+    for i in range(len(to_evaluate["ticker"])):
+        asset = to_evaluate.loc[i, "ticker"]
+        time_series = pd.DataFrame(to_evaluate.loc[i, "time_series_data"])
+        dataset[asset] = time_series["close"]
+    
+    dataset["date"] = pd.DataFrame(to_evaluate.loc[0, "time_series_data"]).loc[:,"date"]
+    print(dataset)
+    dataset.set_index("date",inplace=True)
+    print(dataset)
+    new_dataset = dataset[::-1]
+
+    show_data(new_dataset)
+
+    # CALCULATING THE ANNUAL RETURN OF ASSETS
+    logReturn = calculate_return(new_dataset)
+
+    # DISPLAYING MEAN VALUES OF RETURNS
+    show_statistics(logReturn)
+
+    # DISPLAYING EXPECTED PORTFOLIO RETURN / EXPECTED PORTFOLIO RISK (VOLATILITY)
+    show_mean_variance(logReturn, weight)
+
+    # GENERATING RANDOM PORTFOLIO FOR TESTING
+    pweights, means, risks = generate_portfolio(logReturn)
+
+    # EFFICIENT FRONTIER AND SHARPE RATIO
+    show_portfolio(means, risks)
+
+    # FINDING THE BEST RISK/RATIO PORTFOLIO
+    optimum = optimize_portfolio(pweights, logReturn)
+    print_optimal_portfolio(optimum, logReturn)
+    show_optimal_portfolio(optimum, logReturn, means, risks)

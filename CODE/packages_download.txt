@@ -1,0 +1,14 @@
+# pour télécharger ces packages, écrire dans le terminal :
+# >> pip install -r VOTRECHEMIN\packages_download.txt
+
+numpy 
+pandas
+matplotlib 
+scipy
+scikit-learn
+requests
+certifi
+requests     
+pymongo  
+seaborn
+# plotly inutile
