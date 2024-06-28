@@ -12,3 +12,4 @@ requests
 pymongo  
 seaborn
 # plotly inutile
+pandas_market_calendars
