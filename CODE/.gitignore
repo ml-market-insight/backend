@@ -3,3 +3,6 @@
 
 # Ignore all .png files
 *.png
+
+# Ignore all .csv files
+*.csv
