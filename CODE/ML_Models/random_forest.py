@@ -549,71 +549,80 @@ def predict_new_close2(dataframe, ticker: str, days_pred:int = 10): # TODO : CHE
 
     return df_predict
 
-def main_method(asset_list, GridSearch:bool = False, plot:bool = False):
-        
-        confidence_level_df = pd.DataFrame(columns = ["ticker", "confidence_level"])
-        final_cols = ['ticker', 'date','year','month','day', 'close','volume','ema','dema','williams','rsi','adx','standardDeviation','Avg_close']
-        final_prevision_df = pd.DataFrame(columns = final_cols)
-        df_pred_close_final = pd.DataFrame(columns = ['ticker', 'date', 'year', 'month', 'day', 'close'])
+def main_method(asset_list, GridSearch: bool = False, plot: bool = False,
+                confidence_level_df=None, final_prevision_df=None, df_pred_close_final=None):
+    if confidence_level_df is None:
+        confidence_level_df = pd.DataFrame(columns=["ticker", "confidence_level"])
+    if final_prevision_df is None:
+        final_cols = ['ticker', 'date', 'year', 'month', 'day', 'close', 'volume', 'ema', 'dema', 'williams', 'rsi', 'adx', 'standardDeviation', 'Avg_close']
+        final_prevision_df = pd.DataFrame(columns=final_cols)
+    if df_pred_close_final is None:
+        df_pred_close_final = pd.DataFrame(columns=['ticker', 'date', 'year', 'month', 'day', 'close'])
 
-        for asset in asset_list:
-            one_asset_df = format_df(dataset2, asset)
+    for i, asset in enumerate(asset_list):
+        one_asset_df = format_df(dataset2, asset)
 
-            if GridSearch : 
-                param_grid = {
-                    'n_estimators': [50 , 100, 1000],
-                    'max_depth': [None, 10, 20],
-                    'min_samples_split': [2, 5, 10],
-                    'min_samples_leaf': [1, 2, 4],
-                    'max_features': [3,2,4] # on commence à 4 car racine de 12 vaut 3.4 i.e sqrt(n_features)
-                }           ####### grid.loc[56].params <=== BEST PARAM 
-                
-                label, dataframe, features, features_list , dict_X_Y = ml_data_preparation(one_asset_df)
-
-                # FIND BEST PARAMETERS : 
-                grid_search_random_forest(train_features = dict_X_Y["train_features"] , 
-                                            train_labels = dict_X_Y["train_labels"], 
-                                            test_features = dict_X_Y["test_features"], 
-                                            test_labels = dict_X_Y["test_labels"], 
-                                            param_grid = param_grid, 
-                                            path = r"CODE\ML_Models\random_forest_csv")
-        
-            best_params = {'max_depth': None, 'max_features': 4, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 1000}
-
-            conf_level = create_train_model(asset_df = one_asset_df, asset_name = asset,  best_params = best_params) 
-            data = {
-                'ticker': [asset],
-                'confidence_level': [conf_level]
+        if GridSearch:
+            param_grid = {
+                'n_estimators': [50, 100, 1000],
+                'max_depth': [None, 10, 20],
+                'min_samples_split': [2, 5, 10],
+                'min_samples_leaf': [1, 2, 4],
+                'max_features': [3, 2, 4]  # on commence à 4 car racine de 12 vaut 3.4 i.e sqrt(n_features)
             }
-            df = pd.DataFrame(data)
-            confidence_level_df = pd.concat([confidence_level_df, df], ignore_index=True)
+            label, dataframe, features, features_list, dict_X_Y = ml_data_preparation(one_asset_df)
 
-            start_date = datetime.now() + timedelta(days=1)
-            asset_df_new_dates = generate_dataframe(start_date)
+            # FIND BEST PARAMETERS:
+            grid_search_random_forest(
+                train_features=dict_X_Y["train_features"],
+                train_labels=dict_X_Y["train_labels"],
+                test_features=dict_X_Y["test_features"],
+                test_labels=dict_X_Y["test_labels"],
+                param_grid=param_grid,
+                path=r"CODE\ML_Models\random_forest_csv"
+            )
 
+        best_params = {'max_depth': None, 'max_features': 4, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 1000}
 
-            new_stock = pd.concat([one_asset_df, asset_df_new_dates], ignore_index=True)
-            new_stock['date'] = pd.to_datetime(new_stock['date'])
-            new_stock['ticker'] = new_stock.ticker[0]
+        try:
+            conf_level = create_train_model(asset_df=one_asset_df, asset_name=asset, best_params=best_params)
+        except RuntimeError as e:
+            print(f"RuntimeError occurred: {e}. Retrying with the remaining assets.")
+            # Relancer main_method avec les actifs restants
+            return main_method(
+                asset_list[i:], GridSearch, plot, 
+                confidence_level_df, final_prevision_df, df_pred_close_final
+            )
+        
+        data = {
+            'ticker': [asset],
+            'confidence_level': [conf_level]
+        }
+        df = pd.DataFrame(data)
+        confidence_level_df = pd.concat([confidence_level_df, df], ignore_index=True)
 
-            # stock_features_add = create_features(new_stock, stock)
-            # df_histo_predic = predict_new_close(stock_features_add, stock)
+        start_date = datetime.now() + timedelta(days=1)
+        asset_df_new_dates = generate_dataframe(start_date)
 
-            df_pred = predict_new_close2(new_stock, asset)
-            df_pred_close = df_pred.copy()[['ticker', 'date', 'year', 'month', 'day', 'close']]
-            df_pred_close_final = pd.concat([df_pred_close_final, df_pred_close], ignore_index=True)
-            new_stock["close"] = new_stock["close"].fillna(df_pred.close)
-            final_prevision_df = pd.concat([final_prevision_df, new_stock], ignore_index=True)
-            if plot : 
+        new_stock = pd.concat([one_asset_df, asset_df_new_dates], ignore_index=True)
+        new_stock['date'] = pd.to_datetime(new_stock['date'])
+        new_stock['ticker'] = new_stock.ticker[0]
 
-                plt.plot(new_stock.date, new_stock['close'], label='Close')
-                plt.title(f'Close Prices Over Time for {asset}')
-                plt.xlabel('Date')
-                plt.ylabel('Price')
-                plt.legend()
-                plt.show()
-            
-        return confidence_level_df, df_pred_close
+        df_pred = predict_new_close2(new_stock, asset)
+        df_pred_close = df_pred.copy()[['ticker', 'date', 'year', 'month', 'day', 'close']]
+        df_pred_close_final = pd.concat([df_pred_close_final, df_pred_close], ignore_index=True)
+        new_stock["close"] = new_stock["close"].fillna(df_pred.close)
+        final_prevision_df = pd.concat([final_prevision_df, new_stock], ignore_index=True)
+
+        if plot:
+            plt.plot(new_stock.date, new_stock['close'], label='Close')
+            plt.title(f'Close Prices Over Time for {asset}')
+            plt.xlabel('Date')
+            plt.ylabel('Price')
+            plt.legend()
+            plt.show()
+
+    return confidence_level_df, df_pred_close_final
 
 
 if __name__ == "__main__":
@@ -625,10 +634,13 @@ if __name__ == "__main__":
     print(">>> End Getting data! ")
     tickers_list = dataset2.ticker.unique().tolist()
     full_data_df = get_full_data_df(dataset2, tickers_list)
-    niv_confiance_df, pred_df =  main_method(tickers_list, False)
+    print("START OF ML MODELING ...")
+    # niv_confiance_df, pred_df =  main_method(tickers_list, False)
+    niv_confiance_df, pred_df = main_method(tickers_list, GridSearch=False, plot=False)
 
     niv_confiance_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\confidence_level.csv")
     pred_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\prediction_df.csv")
+    print("END OF ML MODELING !")
 
 
     a = True
