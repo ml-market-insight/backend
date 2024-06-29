@@ -1,0 +1,5 @@
+# Ignore all .pkl files
+*.pkl
+
+# Ignore all .png files
+*.png
