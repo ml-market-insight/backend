@@ -554,8 +554,9 @@ def main_method(asset_list, GridSearch:bool = False, plot:bool = False):
         confidence_level_df = pd.DataFrame(columns = ["ticker", "confidence_level"])
         final_cols = ['ticker', 'date','year','month','day', 'close','volume','ema','dema','williams','rsi','adx','standardDeviation','Avg_close']
         final_prevision_df = pd.DataFrame(columns = final_cols)
+        df_pred_close_final = pd.DataFrame(columns = ['ticker', 'date', 'year', 'month', 'day', 'close'])
 
-        for asset in asset_list:
+        for asset in asset_list[:3]:
             one_asset_df = format_df(dataset2, asset)
 
             if GridSearch : 
@@ -599,6 +600,8 @@ def main_method(asset_list, GridSearch:bool = False, plot:bool = False):
             # df_histo_predic = predict_new_close(stock_features_add, stock)
 
             df_pred = predict_new_close2(new_stock, asset)
+            df_pred_close = df_pred.copy()[['ticker', 'date', 'year', 'month', 'day', 'close']]
+            df_pred_close_final = pd.concat([df_pred_close_final, df_pred_close], ignore_index=True)
             new_stock["close"] = new_stock["close"].fillna(df_pred.close)
             final_prevision_df = pd.concat([final_prevision_df, new_stock], ignore_index=True)
             if plot : 
@@ -610,7 +613,7 @@ def main_method(asset_list, GridSearch:bool = False, plot:bool = False):
                 plt.legend()
                 plt.show()
             
-        return confidence_level_df, final_prevision_df
+        return confidence_level_df, df_pred_close
 
 
 if __name__ == "__main__":
@@ -622,10 +625,10 @@ if __name__ == "__main__":
     print(">>> End Getting data! ")
     tickers_list = dataset2.ticker.unique().tolist()
     full_data_df = get_full_data_df(dataset2, tickers_list)
-    niv_confiance_df, final_prev_df =  main_method(tickers_list, False)
+    niv_confiance_df, pred_df =  main_method(tickers_list, False)
 
     niv_confiance_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\confidence_level.csv")
-    final_prev_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\final_prev_df.csv")
+    pred_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\prediction_df.csv")
 
 
     a = True
