@@ -556,7 +556,7 @@ def main_method(asset_list, GridSearch:bool = False, plot:bool = False):
         final_prevision_df = pd.DataFrame(columns = final_cols)
         df_pred_close_final = pd.DataFrame(columns = ['ticker', 'date', 'year', 'month', 'day', 'close'])
 
-        for asset in asset_list[:3]:
+        for asset in asset_list:
             one_asset_df = format_df(dataset2, asset)
 
             if GridSearch : 
