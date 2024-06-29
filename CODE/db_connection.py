@@ -27,8 +27,8 @@ def insert_prevision_data(df, confidence_level):
         'ticker': df.iloc[0,0],
         'time_series_data': time_series_data,
         'confidence_level' : confidence_level,
-        'img': "LinkToImg"
-        
+        'img_prev': "LinkToImg",
+        'img_ticker': "LinkToImg"
     }
     prevision_collection.insert_one(record)
 

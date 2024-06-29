@@ -549,7 +549,7 @@ def predict_new_close2(dataframe, ticker: str, days_pred:int = 10): # TODO : CHE
 
     return df_predict
 
-def main_method(asset_list, GridSearch: bool = False, plot: bool = False,
+def main_method(asset_list, GridSearch: bool = False, plot: bool = True,
                 confidence_level_df=None, final_prevision_df=None, df_pred_close_final=None):
     if confidence_level_df is None:
         confidence_level_df = pd.DataFrame(columns=["ticker", "confidence_level"])
@@ -615,12 +615,17 @@ def main_method(asset_list, GridSearch: bool = False, plot: bool = False,
         final_prevision_df = pd.concat([final_prevision_df, new_stock], ignore_index=True)
 
         if plot:
-            plt.plot(new_stock.date, new_stock['close'], label='Close')
-            plt.title(f'Close Prices Over Time for {asset}')
-            plt.xlabel('Date')
-            plt.ylabel('Price')
-            plt.legend()
-            plt.show()
+            fig, ax = plt.subplots()
+            ax.plot(df_pred_close.date, df_pred_close['close'], label='Close')
+            fig.tight_layout()
+            ax.set_title(f'Close Prices Over Time for {asset}')
+            ax.set_xlabel('Date')
+            ax.set_ylabel('Price')
+            ax.legend()
+            ax.xaxis.set_tick_params(rotation=45, labelsize='medium') 
+            ax.xaxis.set_major_locator(plt.MaxNLocator(6))
+            plt.savefig(fr"CODE/ML_Models/random_forest_csv/Prev_Images/{asset}_PREV.png" , bbox_inches='tight', pad_inches=0.1)
+            plt.close(fig)
 
     return confidence_level_df, df_pred_close_final
 
@@ -636,7 +641,7 @@ if __name__ == "__main__":
     full_data_df = get_full_data_df(dataset2, tickers_list)
     print("START OF ML MODELING ...")
     # niv_confiance_df, pred_df =  main_method(tickers_list, False)
-    niv_confiance_df, pred_df = main_method(tickers_list, GridSearch=False, plot=False)
+    niv_confiance_df, pred_df = main_method(tickers_list, GridSearch=False, plot=True)
 
     niv_confiance_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\confidence_level.csv")
     pred_df.to_csv(rf"CODE\ML_Models\random_forest_csv\previsions\prediction_df.csv")
