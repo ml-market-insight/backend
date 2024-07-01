@@ -2,12 +2,7 @@
 from packages_import import *
 from db_connection import *
 import yfinance as yf
-
-# STOCKS THAT WILL SCRAP FROM YF
-stocks = ['AAPL','AMZN', 'MSFT', 'EURUSD', 'EURCHF']
-
-# INITIAL ALLOCATION
-weight = [0.3, 0.5, 0.2]
+import fitz  # Import de PyMuPDF
 
 # BOUNDERIES OF HISTORICAL DATA
 start_date = '2017-01-01'
@@ -23,21 +18,6 @@ NUM_PORTFOLIO = 10000
 # _________________________________________________DOWNLOADING/DISPLAYING INITIAL DATA_________________________________
 
 
-def download_data():
-    # Store stocks related data
-    stocks_data = {}
-
-    # search in the previously defined stocks array
-    for stock in stocks:
-        # get the ticker from yfinance
-        ticker = yf.Ticker(stock)
-
-        # add a key stock in a dictionnary stocks_data
-        # retrieve historical data of all stocks
-        stocks_data[stock] = ticker.history(start=start_date, end=end_date)['Close']
-
-    # Return a pandas dataframe with all the historical data
-    return pd.DataFrame(stocks_data)
 
 
 def show_data(data):
@@ -97,7 +77,7 @@ def show_portfolio(returns, volatility):
     plt.show()
 
 
-def generate_portfolio(returns):
+def generate_portfolio(returns, stocks):
     # array of means (expected return of given portfolio)
     portfolio_means = []
 
@@ -145,7 +125,39 @@ def min_function_sharpe(weights, returns):
 
 # what are the constraints ? Sum of w =1
 # f(x)=0 has to be minimized
-def optimize_portfolio(weights, returns):
+def optimize_portfolio_vol(weights, returns, target_volatility):
+    # Fonction de calcul de la volatilité
+    def portfolio_volatility(weights, returns):
+        return np.sqrt(np.dot(weights, np.dot(returns.cov() * NUM_OF_TRADING_DAYS, weights)))
+    
+    # Contraintes
+    def portfolio_constraint(weights):
+        return np.sum(weights) - 1.0  # La somme des poids doit être égale à 1
+    
+    def volatility_constraint(weights, returns, target_volatility):
+        return portfolio_volatility(weights, returns) - target_volatility  # Contrainte pour la volatilité cible
+    
+    constraints = [
+        {'type': 'eq', 'fun': portfolio_constraint},  # Contrainte de somme des poids
+        {'type': 'eq', 'fun': lambda x: volatility_constraint(x, returns, target_volatility)}  # Contrainte pour la volatilité cible
+    ]
+    
+    # Bornes pour les poids des actifs
+    bounds = tuple((0, 1) for _ in range(len(weights)))
+    
+    # Utilisation de weights comme poids initiaux sous forme de tableau unidimensionnel
+    x0 = np.array(weights)  # Assurez-vous que weights est un tableau unidimensionnel
+    
+    # Minimisation de la volatilité pour atteindre la volatilité cible
+    result = optimization.minimize(fun=lambda x: portfolio_volatility(x, returns),  # Minimiser la volatilité
+                                   x0=x0,
+                                   method='SLSQP',
+                                   bounds=bounds,
+                                   constraints=constraints)
+    
+    return result
+
+def optimize_portfolio(weights, returns, stocks):
 
     # The constraints is an equation
     # The function lambda takes x as argument
@@ -161,17 +173,21 @@ def optimize_portfolio(weights, returns):
     # using SLSQP optimization method
     # The bounds for the weights of optimized portfolio is between 0 and 1
     # The sum of all weights is 1 as a constraint
-    return optimization.minimize(fun=min_function_sharpe, x0=weights[0], args=returns, method='SLSQP', bounds=bounds,
+    return optimization.minimize(fun=min_function_sharpe, x0=weights, args=returns, method='SLSQP', bounds=bounds,
                                  constraints=constraints)
 
 
-def print_optimal_portfolio(_optimum, returns):
+def print_optimal_portfolio(_optimum, returns, page):
     # Optimum['x'] refers to the result of the optimization process
-    print("Optimal portfolio: ", _optimum['x'].round(3))
-    print("Expected return and sharpe ratio : ", statistics(_optimum['x'].round(3), returns))
+    opt_portfolio = _optimum['x'].round(3)
+    print("Optimal portfolio: ", opt_portfolio)
+    page.insert_text((50, 240), f"Target portfolio  : {opt_portfolio}")
+    stat = statistics(opt_portfolio, returns)
+    print("Expected return and sharpe ratio : ",stat)
+    return page, opt_portfolio, stat
 
 
-def show_optimal_portfolio(opt, rets, portfolio_rets, portfolio_vols):
+def show_optimal_portfolio(opt, rets, portfolio_rets, portfolio_vols, page):
     plt.figure(figsize=(10, 6))
     plt.scatter(portfolio_vols, portfolio_rets, c=portfolio_rets / portfolio_vols, marker='o')
     plt.grid(True)
@@ -181,42 +197,3 @@ def show_optimal_portfolio(opt, rets, portfolio_rets, portfolio_vols):
     plt.plot(statistics(opt['x'], rets)[1], statistics(opt['x'], rets)[0], 'g*', markersize=6.4)
     plt.show()
 
-
-if __name__ == '__main__':
-    # DOWNLOADING AND DISPLAYING ASSETS
-    dataset2 = get_financial_data()
-    to_evaluate = dataset2[dataset2["ticker"].isin(stocks)].reset_index(drop=True)
-    test = pd.DataFrame(to_evaluate.loc[0, "time_series_data"])
-    dataset = pd.DataFrame()
-    for i in range(len(to_evaluate["ticker"])):
-        asset = to_evaluate.loc[i, "ticker"]
-        time_series = pd.DataFrame(to_evaluate.loc[i, "time_series_data"])
-        dataset[asset] = time_series["close"]
-    
-    dataset["date"] = pd.DataFrame(to_evaluate.loc[0, "time_series_data"]).loc[:,"date"]
-    print(dataset)
-    dataset.set_index("date",inplace=True)
-    print(dataset)
-    new_dataset = dataset[::-1]
-
-    show_data(new_dataset)
-
-    # CALCULATING THE ANNUAL RETURN OF ASSETS
-    logReturn = calculate_return(new_dataset)
-
-    # DISPLAYING MEAN VALUES OF RETURNS
-    show_statistics(logReturn)
-
-    # DISPLAYING EXPECTED PORTFOLIO RETURN / EXPECTED PORTFOLIO RISK (VOLATILITY)
-    show_mean_variance(logReturn, weight)
-
-    # GENERATING RANDOM PORTFOLIO FOR TESTING
-    pweights, means, risks = generate_portfolio(logReturn)
-
-    # EFFICIENT FRONTIER AND SHARPE RATIO
-    show_portfolio(means, risks)
-
-    # FINDING THE BEST RISK/RATIO PORTFOLIO
-    optimum = optimize_portfolio(pweights, logReturn)
-    print_optimal_portfolio(optimum, logReturn)
-    show_optimal_portfolio(optimum, logReturn, means, risks)
