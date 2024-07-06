@@ -1,6 +1,6 @@
 
-from packages_import import *
-from db_connection import *
+from CODE.packages_import import *
+from CODE.db_connection import *
 import yfinance as yf
 
 # STOCKS THAT WILL SCRAP FROM YF

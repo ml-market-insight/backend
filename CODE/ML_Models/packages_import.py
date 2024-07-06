@@ -5,13 +5,12 @@ import scipy.optimize as optimization
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import mean_squared_error
-import requests
 import time
 import pandas as pd 
 import certifi
 import json
 import matplotlib.pyplot as plt
-from requests import HTTPError
+from fastapi import FastAPI, APIRouter, HTTPException
 import ssl
 from urllib.request import urlopen
 from pymongo import MongoClient

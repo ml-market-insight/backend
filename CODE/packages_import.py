@@ -5,11 +5,10 @@ import scipy.optimize as optimization
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-import requests
 import time
 import certifi
 import json
-from requests import HTTPError
+from fastapi import FastAPI, APIRouter, HTTPException
 import ssl
 from urllib.request import urlopen
 from pymongo import MongoClient

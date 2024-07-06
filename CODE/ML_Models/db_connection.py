@@ -1,5 +1,7 @@
-
+from pymongo.server_api import ServerApi
 from packages_import import *
+import pandas as pd
+
 client = MongoClient('mongodb+srv://matthieuvichet:aO0mNOu20DVJpKHz@mlmarketinsights.vgtptz0.mongodb.net/')
 db = client['MLMarketInsights']
 financial_collection = db['FinancialData']

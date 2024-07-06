@@ -1,10 +1,13 @@
 
-from packages_import import *
+from CODE.packages_import import *
 
 client = MongoClient('mongodb+srv://matthieuvichet:aO0mNOu20DVJpKHz@mlmarketinsights.vgtptz0.mongodb.net/')
 db = client['MLMarketInsights']
 financial_collection = db['FinancialData'] # creer le mien pour save les predict et ticker, erreur image
 prevision_collection = db['PrevisionData']
+
+def get_db():
+    return db
 
 def insert_financial_data(df):
     """
