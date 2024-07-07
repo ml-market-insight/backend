@@ -116,4 +116,4 @@ def BDD_adding_data(historical:bool = False, prevision:bool = True):
 
 
 if __name__ == "__main__":
-    BDD_adding_data(historical = False, prevision = False)
+    BDD_adding_data(historical = False, prevision = True)

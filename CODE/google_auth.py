@@ -8,7 +8,7 @@ import googleapiclient.discovery
 from google.auth.exceptions import DefaultCredentialsError
 
 # Chemin vers votre fichier credentials.json
-CLIENT_SECRET_FILE = 'CODE/credentials.json'
+CLIENT_SECRET_FILE = 'CODE\credentials.json'
 
 # Scopes dont nous avons besoin
 SCOPES = ['https://www.googleapis.com/auth/drive.file']

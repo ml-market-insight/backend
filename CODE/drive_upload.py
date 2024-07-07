@@ -2,6 +2,7 @@
 from google_auth import create_drive_service
 import googleapiclient.http
 import os
+import json 
 
 def upload_file(service, file_path, file_name, mime_type='image/png'):
     file_metadata = {'name': file_name}
@@ -51,3 +52,8 @@ if __name__ == "__main__":
     # Afficher les liens partageables
     for file_name, link in links:
         print(f'File: {file_name} - Shareable Link: {link}')
+
+
+    links_file_path = 'CODE/shareable_links.json'
+    with open(links_file_path, 'w') as f:
+        json.dump(links, f, indent=4)
