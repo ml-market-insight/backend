@@ -24,11 +24,17 @@ def fetch_all_tickers():
 
     asset_full_name_data = get_asset_full_name_data()
     merged_data = prediction_data.merge(asset_full_name_data, on='ticker', how='left')
+
+    transformed_data = merged_data.rename(columns={
+        'img_ticker': 'icon',
+        'confidence_level': 'trust'
+    })[['name', 'ticker', 'icon', 'trust']]
+
     # Convertir le DataFrame pandas en un dictionnaire
-    data_dict = merged_data.drop(["time_series_data", "img_prev"], axis=1).to_dict(orient='records')
+    data_dict = transformed_data.to_dict(orient='records') # merged_data.drop(["time_series_data", "img_prev"], axis=1).to_dict(orient='records')
     
     # Renvoyer les données JSON
-    return jsonify({"data": data_dict})
+    return jsonify(data_dict)
 
 
 

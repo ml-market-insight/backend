@@ -46,7 +46,7 @@ def insert_prevision_data(df, confidence_level):
     prediction_collection.insert_one(record)
 
 
-def insert_full_name_data(json_file = 'asset_fullName.json'): 
+def insert_full_name_data(json_file = 'CODE/asset_fullName.json'): 
     """
     Information comes from code and not the API
     """
@@ -59,7 +59,7 @@ def insert_full_name_data(json_file = 'asset_fullName.json'):
         ticker_full_name = ticker_data[1]
         record = {
             'ticker': ticker,
-            'ticker_full_name': ticker_full_name
+            'name': ticker_full_name
         }
         assetNames_collection.insert_one(record)
 
