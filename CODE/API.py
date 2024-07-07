@@ -126,4 +126,5 @@ def BDD_adding_data(historical:bool = False, prevision:bool = True, tickerFullNa
 
 
 if __name__ == "__main__":
-    BDD_adding_data(historical = False, prevision = False, tickerFullName = True)
+    BDD_adding_data(historical = False, prevision = True, tickerFullName = False)
+

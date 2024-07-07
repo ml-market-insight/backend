@@ -5,7 +5,9 @@
 from flask import Flask, jsonify
 import pandas as pd
 from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
-from db_connection import get_prediction_data  # Assurez-vous que db_connection.py est correctement importé
+from db_connection import get_prediction_data , get_asset_full_name_data   # Assurez-vous que db_connection.py est correctement importé
+from io import StringIO
+
 
 app = Flask(__name__)
 
@@ -19,12 +21,16 @@ def fetch_all_tickers():
     # Si nécessaire, ajustez cette logique en fonction de la structure de vos données
     if '_id' in prediction_data.columns:  # Assurez-vous que '_id' est la colonne contenant ObjectId
         prediction_data['_id'] = prediction_data['_id'].astype(str)
-    
+
+    asset_full_name_data = get_asset_full_name_data()
+    merged_data = prediction_data.merge(asset_full_name_data, on='ticker', how='left')
     # Convertir le DataFrame pandas en un dictionnaire
-    data_dict = prediction_data.to_dict(orient='records')  # 'records' pour un format adapté à la conversion en JSON
+    data_dict = merged_data.drop(["time_series_data", "img_prev"], axis=1).to_dict(orient='records')
     
     # Renvoyer les données JSON
     return jsonify({"data": data_dict})
+
+
 
 # Exemple de route pour accéder à des données d'un modèle
 @app.route('/predict', methods=['POST'])
