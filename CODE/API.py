@@ -58,7 +58,7 @@ def get_indicator(ticker, indicator, key):
 def populate_BDD(assets_array):
     indicators = ["ema", "dema", "williams", "rsi", "adx", "standardDeviation"]
 
-    for i in range(0,len(asset_array)):
+    for i in range(0,len(assets_array)):
         historical_price = fetch_data_with_retry(get_historical_price,assets_array.iloc[i, 0])
         historical_data = historical_price['historical'].apply(pd.Series)[['date', 'close', 'volume','high', 'low']]
         for indicator in indicators:

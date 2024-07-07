@@ -13,4 +13,11 @@ pymongo
 seaborn
 # plotly inutile
 pandas_market_calendars
+<<<<<<< HEAD
 fitz
+=======
+google-auth 
+google-auth-oauthlib 
+google-auth-httplib2 
+google-api-python-client
+>>>>>>> remove-pkl-files
