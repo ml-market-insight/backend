@@ -2,7 +2,7 @@
 #### tester avec httpie : http GET http://127.0.0.1:5000/
 
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, send_file, request
 import pandas as pd
 from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
 from db_connection import get_prediction_data , get_asset_full_name_data   # Assurez-vous que db_connection.py est correctement importé
@@ -53,7 +53,7 @@ def user_simulation():
 @app.route('/UserSimulation/test', methods=['GET'])
 def test_user_simulation():
     url = 'http://127.0.0.1:5000/UserSimulation'
-    tickers = ["GOOGL", "MSFT", "NVDA", "TSLA"]
+    tickers = ["GOOGL", "AMZN", "GOOG", "TSLA"]
     response = requests.post(url, json=tickers)  # Envoyer directement la liste des tickers en tant que JSON
     try:
         response.raise_for_status()  # Vérifier si la requête a réussi
@@ -68,5 +68,13 @@ def test_user_simulation():
         }), 500
 
 
+
+@app.route('/download')
+def download_file():
+    file_path = fr'C:\Users\PAYA Elsa\Documents\ELSA\ECOLE\S8 M1\MASTER PROJECT\CODE\backend\MLMarketInsight_Report.pdf' # matthieu tu met MLMarketInsight_Report.pdf en path
+    return send_file(file_path, as_attachment=True)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+

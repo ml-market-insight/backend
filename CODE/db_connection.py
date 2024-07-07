@@ -89,7 +89,6 @@ def get_prediction_data():
     cursor = prediction_collection.find()
     return pd.DataFrame(list(cursor))
 
-
 def get_asset_full_name_data():
     cursor = assetNames_collection.find()
     return pd.DataFrame(list(cursor)).drop("_id", axis = 1)

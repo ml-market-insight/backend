@@ -5,7 +5,7 @@ from ML_Models.markowitz import *
 import fitz  # Import de PyMuPDF
 import datetime as dt
 from db_connection import *
-
+import os
 
 def calculate_return_asset(df_asset, stocks):
     _return = pd.DataFrame()
@@ -29,6 +29,18 @@ def total_perf_stocks(stocks, _return):
         total_perf[stock] = perf
     return total_perf
 
+# Function to convert Google Drive URL to direct download URL
+def get_direct_gdrive_url(view_url):
+    file_id = view_url.split('/')[-2]
+    return f'https://drive.google.com/uc?id={file_id}'
+
+# Function to download a file from a URL
+def download_file(url, save_path):
+    response = requests.get(url)
+    response.raise_for_status()  # Check that the request was successful
+
+    with open(save_path, 'wb') as file:
+        file.write(response.content)
 def simulation(list_assets):
 
     """
@@ -194,6 +206,26 @@ def simulation(list_assets):
         page.insert_text((50, 280), f"Expected performance of {stocks[i]} : {round((perf_final[i] - 1)*100, 3)}%")
         page.insert_text((50, 300), f"Contribution à la performance : {round((contrib[i])*100, 3)}%")
         page.insert_text((50, 320), f"asset 1 graph prediction FETCH PHOTO")
+        asset_to_evaluate = prediction[prediction["ticker"].isin(stocks)].reset_index(drop=True)
+
+
+        pred_file = 'pred_file.png'
+
+
+        asset = asset_to_evaluate[asset_to_evaluate["ticker"] == stocks[i]]
+        path = asset["img_prev"].iloc[0]
+        direct_url = get_direct_gdrive_url(path)  # Convert to direct download URL
+
+        download_file(direct_url, pred_file)
+        # Définir la position et la taille de l'image sur la page
+        img_height = 200  # Par exemple
+        img_width = 500  # Par exemple
+        rect = fitz.Rect(50, 330, 50 + img_width, 330 + img_height)
+        
+        # Insert the image into the page
+        page.insert_image(rect, filename=str(pred_file))
+        os.remove(pred_file)
+    
 
  
 
@@ -222,7 +254,7 @@ def simulation(list_assets):
     timestamp = signature[1].replace(":", "-").replace(".", "-")
     
     # Générer le nom de fichier avec un timestamp valide
-    filename = f"MLMarketInsight_Report_{signature[0]}{timestamp}.pdf"
+    filename = f"MLMarketInsight_Report.pdf"
     
     doc.save(filename)
     doc.close()   
