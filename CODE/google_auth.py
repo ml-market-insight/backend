@@ -14,7 +14,7 @@ CLIENT_SECRET_FILE = 'CODE\credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 # Nom du fichier token.json pour stocker les jetons d'accès et de rafraîchissement
-TOKEN_FILE = 'token.json'
+TOKEN_FILE = 'CODE/token.json'
 
 def authenticate():
     creds = None
