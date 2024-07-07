@@ -2,7 +2,7 @@
 #### tester avec httpie : http GET http://127.0.0.1:5000/
 
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_file
 import pandas as pd
 from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
 from db_connection import get_prediction_data , get_asset_full_name_data   # Assurez-vous que db_connection.py est correctement importé
@@ -44,5 +44,13 @@ def predict():
     # Ajoutez ici la logique pour faire des prédictions si nécessaire
     return jsonify({"prediction": "Résultat de prédiction"})
 
+
+@app.route('/download')
+def download_file():
+    file_path = 'MLMarketInsight_Report.pdf'
+    return send_file(file_path, as_attachment=True)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
