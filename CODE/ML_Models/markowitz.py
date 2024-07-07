@@ -3,6 +3,7 @@ from packages_import import *
 from db_connection import *
 import yfinance as yf
 import fitz  # Import de PyMuPDF
+from io import BytesIO
 
 # BOUNDERIES OF HISTORICAL DATA
 start_date = '2017-01-01'
@@ -20,12 +21,27 @@ NUM_PORTFOLIO = 10000
 
 
 
-def show_data(data):
-    # plotting a figure, precizing the size
-    data.plot(figsize=(10, 5))
+def show_data(data, page, y):
+    # Créer une figure avec matplotlib
+    fig, ax = plt.subplots(figsize=(10, 5))
+    data.plot(ax=ax)
 
-    # plotting using matplotlib
-    plt.show()
+    # Sauvegarder la figure dans un objet BytesIO
+    img_stream = BytesIO()
+    plt.savefig(img_stream, format='png')
+    img_stream.seek(0)  # Revenir au début du fichier
+
+    # Définir la position et la taille de l'image sur la page
+    img_height = 200  # Par exemple
+    img_width = 500  # Par exemple
+    rect = fitz.Rect(50, y, 50 + img_width, y + img_height)
+    
+    # Insérer l'image dans la page
+    page.insert_image(rect, stream=img_stream)
+
+    # Fermer la figure pour libérer la mémoire
+    plt.close(fig)
+
 
 
 # _________________________________________CALCULATING RETURNS/VOLATILITY_OF_ASSETS/PORTFOLIO___________________________
@@ -48,7 +64,7 @@ def show_statistics(returns):
     print("Covariance matrix of assets\n", returns.cov() * NUM_OF_TRADING_DAYS)
 
 
-def show_mean_variance(returns, weights):
+def show_mean_variance(returns, weights, page):
     # Annual return of the portfolio, based on asset returns, weighted by the allocation.
     portfolio_return = np.sum(returns.mean() * weights) * NUM_OF_TRADING_DAYS
 
@@ -57,6 +73,7 @@ def show_mean_variance(returns, weights):
 
     print("Expected portfolio return (mean) : ", portfolio_return)
     print("Expected portfolio volatility (standard deviation) : ", portfolio_volatility)
+
 
 
 # _________________________________________________MONTE-CARLO_SIMULATIONS_____________________________________________
@@ -177,13 +194,42 @@ def optimize_portfolio(weights, returns, stocks):
                                  constraints=constraints)
 
 
-def print_optimal_portfolio(_optimum, returns, page):
+def print_optimal_portfolio(_optimum, returns, page, stocks):
     # Optimum['x'] refers to the result of the optimization process
     opt_portfolio = _optimum['x'].round(3)
     print("Optimal portfolio: ", opt_portfolio)
-    page.insert_text((50, 240), f"Target portfolio  : {opt_portfolio}")
     stat = statistics(opt_portfolio, returns)
     print("Expected return and sharpe ratio : ",stat)
+    page.insert_text((50, 470), f"Volatility expected : {round((stat[1] - 1)*100, 3)}%")
+    page.insert_text((50, 490), f"Return expected : {round((stat[0] - 1)*100, 3)}%")
+    page.insert_text((50, 510), f"Sharpe ratio expected : {round(stat[2], 3)}")
+
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    colors = plt.cm.Paired(np.linspace(0, 1, len(stocks)))
+
+    plt.pie(opt_portfolio, labels=stocks, colors=colors,
+            autopct='%1.1f%%', shadow=True, startangle=140)
+
+    plt.axis('equal')  # Assure que le graphique est dessiné comme un cercle.
+
+    plt.title('Optimized portfolio allocation')
+    # Sauvegarder la figure dans un objet BytesIO
+    img_stream = BytesIO()
+    plt.savefig(img_stream, format='png')
+    img_stream.seek(0)  # Revenir au début du fichier
+
+    # Définir la position et la taille de l'image sur la page
+    img_height = 200  # Par exemple
+    img_width = 500  # Par exemple
+    rect = fitz.Rect(50, 520, 50 + img_width, 520 + img_height)
+    
+    # Insérer l'image dans la page
+    page.insert_image(rect, stream=img_stream)
+
+    # Fermer la figure pour libérer la mémoire
+    plt.close(fig)
+
     return page, opt_portfolio, stat
 
 
@@ -195,5 +241,19 @@ def show_optimal_portfolio(opt, rets, portfolio_rets, portfolio_vols, page):
     plt.ylabel('Expected Return')
     plt.colorbar(label='Sharpe Ratio')
     plt.plot(statistics(opt['x'], rets)[1], statistics(opt['x'], rets)[0], 'g*', markersize=6.4)
-    plt.show()
+    
+    img_stream = BytesIO()
+    plt.savefig(img_stream, format='png')
+    img_stream.seek(0)  # Revenir au début du fichier
+
+    # Définir la position et la taille de l'image sur la page
+    img_height = 200  # Par exemple
+    img_width = 500  # Par exemple
+    rect = fitz.Rect(50, 260, 50 + img_width, 260 + img_height)
+    
+    # Insérer l'image dans la page
+    page.insert_image(rect, stream=img_stream)
+
+    # Fermer la figure pour libérer la mémoire
+    plt.close()
 
