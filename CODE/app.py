@@ -1,32 +1,35 @@
-#### commande pour exécuter l'application : python BACKEND/CODE/app.py
+#### commande pour exécuter l'application : python CODE/app.py
 #### tester avec httpie : http GET http://127.0.0.1:5000/
 
-from db_connection import *
 
 from flask import Flask, jsonify
+import pandas as pd
+from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
+from db_connection import get_prediction_data  # Assurez-vous que db_connection.py est correctement importé
 
 app = Flask(__name__)
 
-# Exemple de route pour tester l'API
+# Exemple de route pour retourner les données d'un modèle
 @app.route('/fetchAllTickers')
-def index():
+def fetch_all_tickers():
+    # Obtenir les données de prédiction à partir d'une fonction ou méthode (ex: get_prediction_data())
+    prediction_data = get_prediction_data()  # Assurez-vous que cette fonction retourne un DataFrame pandas
     
-    prediction = get_prediction_data()
-    pred = pd.DataFrame()
-
-    for i in range(len(prediction["ticker"])):
-        asset = prediction.loc[i, "ticker"]
-        time_series = pd.DataFrame(prediction.loc[i, "time_series_data"])
-        pred[asset] = time_series["close"]
+    # Convertir les ObjectId en chaînes de caractères dans le DataFrame
+    # Si nécessaire, ajustez cette logique en fonction de la structure de vos données
+    if '_id' in prediction_data.columns:  # Assurez-vous que '_id' est la colonne contenant ObjectId
+        prediction_data['_id'] = prediction_data['_id'].astype(str)
     
-
-    return jsonify({pred})
+    # Convertir le DataFrame pandas en un dictionnaire
+    data_dict = prediction_data.to_dict(orient='records')  # 'records' pour un format adapté à la conversion en JSON
+    
+    # Renvoyer les données JSON
+    return jsonify({"data": data_dict})
 
 # Exemple de route pour accéder à des données d'un modèle
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Ici vous pouvez ajouter la logique pour utiliser vos modèles ML dans ML_MODELS/
-    # Exemple simplifié pour la démonstration
+    # Ajoutez ici la logique pour faire des prédictions si nécessaire
     return jsonify({"prediction": "Résultat de prédiction"})
 
 if __name__ == '__main__':
