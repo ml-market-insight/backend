@@ -83,7 +83,7 @@ def populate_BDD_with_prevision():
         insert_prevision_data(df = group_df, confidence_level = niv_confiance_df[niv_confiance_df["ticker"] == ticker].iloc[0,1] )
 
 
-def BDD_adding_data(historical:bool = False, prevision:bool = True):
+def BDD_adding_data(historical:bool = False, prevision:bool = True, tickerFullName:bool = False):
     """
     Theoricaly not both at the same time
     """
@@ -114,6 +114,16 @@ def BDD_adding_data(historical:bool = False, prevision:bool = True):
         populate_BDD_with_prevision()
         print("Successfully populated database with prevision...")
 
+    if tickerFullName : 
+        print("deleting tickerFullName")
+        delete_asset_full_name_documents()
+        print("deleted tickerFullName")
+        time.sleep(5)
+
+        print("Populating database with tickerFullName...")
+        insert_full_name_data()
+        print("Successfully populated database with tickerFullName...")
+
 
 if __name__ == "__main__":
-    BDD_adding_data(historical = False, prevision = True)
+    BDD_adding_data(historical = False, prevision = False, tickerFullName = True)

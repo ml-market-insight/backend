@@ -5,6 +5,7 @@ client = MongoClient('mongodb+srv://matthieuvichet:aO0mNOu20DVJpKHz@mlmarketinsi
 db = client['MLMarketInsights']
 financial_collection = db['FinancialData'] # creer le mien pour save les predict et ticker, erreur image
 prediction_collection = db['PrevisionData']
+assetNames_collection = db['AssetsFullNames']
 
 def insert_financial_data(df):
     """
@@ -45,11 +46,35 @@ def insert_prevision_data(df, confidence_level):
     prediction_collection.insert_one(record)
 
 
+def insert_full_name_data(json_file = 'asset_fullName.json'): 
+    """
+    Information comes from code and not the API
+    """
+    with open(json_file, 'r') as f:
+            data = json.load(f)
+
+    for ticker_data in data:
+
+        ticker = ticker_data[0] 
+        ticker_full_name = ticker_data[1]
+        record = {
+            'ticker': ticker,
+            'ticker_full_name': ticker_full_name
+        }
+        assetNames_collection.insert_one(record)
+
+
 def delete_all_documents():
     financial_collection.delete_many({})
 
 def delete_prevision_documents():
     prediction_collection.delete_many({})
+
+def delete_asset_full_name_documents():
+    assetNames_collection.delete_many({})
+
+
+
     
 # Function to query financial data
 def get_financial_data():
@@ -60,7 +85,11 @@ def get_prevision_data():
     cursor = prediction_collection.find()
     return pd.DataFrame(list(cursor))
 
-
 def get_prediction_data():
     cursor = prediction_collection.find()
     return pd.DataFrame(list(cursor))
+
+
+def get_asset_full_name_data():
+    cursor = assetNames_collection.find()
+    return pd.DataFrame(list(cursor)).drop("_id", axis = 1)
