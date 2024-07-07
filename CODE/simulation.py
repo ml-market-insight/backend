@@ -29,7 +29,7 @@ def total_perf_stocks(stocks, _return):
         total_perf[stock] = perf
     return total_perf
 
-def simulation():
+def simulation(list_assets):
 
     """
     INIT PDF EDITION
@@ -45,7 +45,8 @@ def simulation():
     INIT STOCKS AND ALLOCATION 100% / n
     """
 
-    stocks = np.array(["AAPL", "MSFT", "NVDA", "TSLA"])
+    # stocks = np.array(["AAPL", "MSFT", "NVDA", "TSLA"])
+    stocks = np.array(list_assets)
     alloc = [(1 / len(stocks)) for i in range(len(stocks))]
 
 
@@ -231,6 +232,6 @@ def simulation():
 
 
 if __name__ == '__main__':
-
-
-    simulation()
+    
+    list_user_assets = ["AAPL", "MSFT", "NVDA", "TSLA"]
+    simulation(list_user_assets)
