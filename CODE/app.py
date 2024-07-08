@@ -71,7 +71,7 @@ def test_user_simulation():
 
 @app.route('/download')
 def download_file():
-    file_path = fr'C:\Users\PAYA Elsa\Documents\ELSA\ECOLE\S8 M1\MASTER PROJECT\CODE\backend\MLMarketInsight_Report.pdf' # matthieu tu met MLMarketInsight_Report.pdf en path
+    file_path = fr'../MLMarketInsight_Report.pdf' # matthieu tu met MLMarketInsight_Report.pdf en path
     return send_file(file_path, as_attachment=True)
 
 
