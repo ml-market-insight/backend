@@ -3,6 +3,7 @@
 
 
 from flask import Flask, jsonify, send_file, request
+from flask_cors import CORS
 import pandas as pd
 from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
 from db_connection import get_prediction_data , get_asset_full_name_data   # Assurez-vous que db_connection.py est correctement importé
@@ -13,6 +14,7 @@ import json
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/fetchAllTickers')
 def fetch_all_tickers():
@@ -27,7 +29,7 @@ def fetch_all_tickers():
         'img_ticker': 'icon',
         'confidence_level': 'trust'
     })[['name', 'ticker', 'icon', 'trust']]
-    data_dict = transformed_data.to_dict(orient='records') 
+    data_dict = transformed_data.to_dict(orient='records')
     
     return jsonify(data_dict)
 

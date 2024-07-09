@@ -19,4 +19,5 @@ google-auth-oauthlib
 google-auth-httplib2 
 google-api-python-client
 Flask
+flask_cors
 yfinance
