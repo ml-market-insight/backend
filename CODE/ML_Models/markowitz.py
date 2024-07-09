@@ -15,6 +15,8 @@ NUM_OF_TRADING_DAYS = 252
 # NUMBER OF PORTFOLIO TO GENERATE FOR MONTE-CARLO SIMULATIONS
 NUM_PORTFOLIO = 10000
 
+plt.switch_backend('Agg') 
+
 
 # _________________________________________________DOWNLOADING/DISPLAYING INITIAL DATA_________________________________
 
