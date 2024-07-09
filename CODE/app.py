@@ -3,7 +3,7 @@
 
 
 from flask import Flask, jsonify, send_file, request
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import pandas as pd
 from bson import ObjectId  # Importez ObjectId si vous utilisez MongoDB
 from db_connection import get_prediction_data , get_asset_full_name_data   # Assurez-vous que db_connection.py est correctement importé
@@ -14,9 +14,17 @@ import json
 import requests
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}},
+     origins="*",
+     methods=["GET", "POST", "UPDATE", "DELETE", "PUT"],
+     allow_headers=["Content-Type", "Authorization",
+                    "Access-Control-Allow-Credentials", "Access-Control-Allow-Origin",
+                    "Access-Control-Allow-Headers", "x-access-token", "Origin", "Accept",
+                    "X-Requested-With", "Access-Control-Request-Method",
+                    "Access-Control-Request-Headers"])
 
 @app.route('/fetchAllTickers')
+@cross_origin()
 def fetch_all_tickers():
     prediction_data = get_prediction_data()
     if '_id' in prediction_data.columns:  
@@ -36,7 +44,8 @@ def fetch_all_tickers():
 
 @app.route('/UserSimulation', methods=['POST'])
 def user_simulation():
-    tickers = request.json
+    body = request.json
+    tickers = body.get('tickers')
     # ON DOIT RECEVOIR UNE LISTE DE TICKER DE LA SORTE EX : ["AAPL", "MSFT", "NVDA", "TSLA"] pour ensuite faire nos simulation et on te retourne le json
     if not tickers:
         return jsonify({"error": "No tickers provided"}), 400
